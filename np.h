@@ -11,7 +11,7 @@ double getRandomDouble(double low, double high)
     return dis(gen);
 }
 
-vector<vector<double>> dotProduct(vector<vector<double>> x, vector<vector<double>> y)
+vector<vector<double>> dotProduct(vector<vector<double>> &x, vector<vector<double>> &y)
 {
     vector<vector<double>> output = vector<vector<double>>(x.size(), vector<double>(y[0].size()));
 
@@ -30,7 +30,7 @@ vector<vector<double>> dotProduct(vector<vector<double>> x, vector<vector<double
     return output;
 }
 
-vector<double> matrixAdd(vector<double> x, vector<double> y)
+vector<double> matrixAdd(vector<double> &x, vector<double> &y)
 {
     vector<double> output(x.size());
     for (int i = 0; i < x.size(); i++)
@@ -40,7 +40,7 @@ vector<double> matrixAdd(vector<double> x, vector<double> y)
     return output;
 }
 
-void printMatrix2D(vector<vector<double>> mat)
+void printMatrix2D(vector<vector<double>> &mat)
 {
     for (int i = 0; i < mat.size(); i++)
     {
@@ -61,7 +61,7 @@ void printMatrix1D(vector<double> &mat)
     cout << endl;
 }
 
-vector<vector<double>> transpose(vector<vector<double>> mat)
+vector<vector<double>> transpose(vector<vector<double>> &mat)
 {
     vector<vector<double>> result(mat[0].size(), vector<double>(mat.size()));
     for (int i = 0; i < mat.size(); i++)
@@ -74,7 +74,7 @@ vector<vector<double>> transpose(vector<vector<double>> mat)
     return result;
 }
 
-vector<double> sumMatrix(vector<vector<double>> mat, int axis)
+vector<double> sumMatrix(vector<vector<double>> &mat, int axis)
 {
     vector<double> sum;
     if (axis == 0)
@@ -107,7 +107,7 @@ vector<double> sumMatrix(vector<vector<double>> mat, int axis)
     }
 }
 
-vector<double> argmax(vector<vector<double>> mat)
+vector<double> argmax(vector<vector<double>> &mat)
 {
     vector<double> ans(mat.size(), 0);
     for (int row = 0; row < mat.size(); row++)

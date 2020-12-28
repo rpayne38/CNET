@@ -35,7 +35,7 @@ public:
         
     }
 
-    void forward(vector<vector<double>> inputs)
+    void forward(vector<vector<double>> &inputs)
     {
         _inputs = inputs;
         output = dotProduct(inputs, weights);
@@ -45,7 +45,7 @@ public:
         }
     }
 
-    void backward(vector<vector<double>> dvalues)
+    void backward(vector<vector<double>> &dvalues)
     {
         vector<vector<double>> inputs_T(_inputs[0].size(), vector<double>(_inputs.size()));
         dweights = vector<vector<double>>(weights.size(), vector<double>(weights[0].size()));
@@ -67,7 +67,7 @@ public:
     vector<vector<double>> dinputs;
     vector<vector<double>> inputs;
 
-    void forward(vector<vector<double>> input)
+    void forward(vector<vector<double>> &input)
     {
         inputs = input;
         output = vector<vector<double>>(input.size(), vector<double>(input[0].size()));
@@ -83,7 +83,7 @@ public:
         }
     }
 
-    void backward(vector<vector<double>> dvalues)
+    void backward(vector<vector<double>> &dvalues)
     {
         dinputs = vector<vector<double>>(dvalues.size(), vector<double>(dvalues[0].size(), 0));
         for (int row = 0; row < dvalues.size(); row++)
@@ -104,7 +104,7 @@ class Softmax
 public:
     vector<vector<double>> output;
 
-    void forward(vector<vector<double>> input)
+    void forward(vector<vector<double>> &input)
     {
         //find max of each row
         vector<double> max(input.size(), 0);
@@ -146,10 +146,10 @@ class Loss
 {
 public:
     virtual vector<double> forward(vector<vector<double>> output, vector<vector<double>> y){};
-    double calculate(vector<vector<double>> output, vector<vector<double>> y)
+    float calculate(vector<vector<double>> &output, vector<vector<double>> &y)
     {
         vector<double> sample_losses = forward(output, y);
-        double sum = 0;
+        float sum = 0;
         for (int i = 0; i < sample_losses.size(); i++)
         {
             sum += sample_losses[i];
@@ -206,9 +206,9 @@ class SoftmaxwithLoss
 public:
     vector<vector<double>> output;
     vector<vector<double>> dinputs;
-    double loss;
+    float loss;
 
-    void forward(vector<vector<double>> inputs, vector<vector<double>> y_true)
+    void forward(vector<vector<double>> &inputs, vector<vector<double>> &y_true)
     {
         Softmax activation;
         CategoricalCrossEntropy loss_func;
@@ -217,7 +217,7 @@ public:
         loss = loss_func.calculate(output, y_true);
     }
 
-    void backward(vector<vector<double>> dvalues, vector<vector<double>> y_true)
+    void backward(vector<vector<double>> &dvalues, vector<vector<double>> &y_true)
     {
         //if one hot change to discrete value
         vector<double> discrete;
@@ -252,12 +252,12 @@ public:
 class SGD
 {
 public:
-    double _lr;
-    double current_lr;
-    double _decay;
+    float _lr;
+    float current_lr;
+    float _decay;
     int _step = 0;
-    double _momentum = 0;
-    SGD(double lr, double decay, double momentum)
+    float _momentum = 0;
+    SGD(float lr, float decay, float momentum)
     {
         _lr = lr;
         current_lr = lr;
@@ -295,11 +295,11 @@ public:
 };
 
 
-double calculate(vector<vector<double>> y_pred, vector<vector<double>> y_true)
+double accuracy(vector<vector<double>> &y_pred, vector<vector<double>> &y_true)
 {
     vector<double> preds = argmax(y_pred);
     vector<double> gnd_true = argmax(y_true);
-    double sum = 0;
+    float sum = 0;
     for(int sample = 0; sample < preds.size(); sample++)
     {
         if(preds[sample] == gnd_true[sample])
@@ -307,6 +307,6 @@ double calculate(vector<vector<double>> y_pred, vector<vector<double>> y_true)
             sum += 1;
         }
     }
-    double accuracy = sum / preds.size();
-    return accuracy;
+    float acc = sum / preds.size();
+    return acc;
 }

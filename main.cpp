@@ -81,6 +81,7 @@ int main()
 {
     clock_t start;
     start = clock();
+
     cout << "Loading data...\n";
     vector<vector<double>> dataset = read_mnist_imgs("/home/rob/Documents/c++/train-images.idx3-ubyte");
     vector<vector<double>> labels = read_mnist_labels("/home/rob/Documents/c++/train-labels.idx1-ubyte");
@@ -109,7 +110,7 @@ int main()
         softmax.forward(Dense3.output, labels);
 
         //output of model
-        cout << "Loss: " << softmax.loss << "\tAccuracy: " << calculate(softmax.output, labels) << "\t" << "Lr: " << optimizer.current_lr << "\n";
+        cout << "Loss: " << softmax.loss << "\tAccuracy: " << accuracy(softmax.output, labels) << "\t" << "Lr: " << optimizer.current_lr << "\n";
 
         //backward pass
         softmax.backward(softmax.output, labels);
@@ -127,6 +128,8 @@ int main()
     }
 
     cout << "\n";
+
     double duration = (clock() - start) / (double) CLOCKS_PER_SEC;
     cout << duration << "secs";
+    cout << "\n";
 }
