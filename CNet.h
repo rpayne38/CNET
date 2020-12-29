@@ -22,6 +22,7 @@ public:
     Dense(unsigned int n_inputs, unsigned int n_neurons)
     {
         weights = vector<vector<double>>(n_inputs, vector<double>(n_neurons));
+        #pragma omp parallel for collapse(2) 
         for (int row = 0; row < n_inputs; row++)
         {
             for (int col = 0; col < n_neurons; col++)
@@ -38,7 +39,7 @@ public:
     void forward(vector<vector<double>> &inputs)
     {
         _inputs = inputs;
-        output = dotProduct(inputs, weights);
+        output = matrixMultiply(inputs, weights);
         for (int i = 0; i < output.size(); i++)
         {
             output[i] = matrixAdd(output[i], biases);
@@ -53,10 +54,10 @@ public:
         vector<vector<double>> weights_T(weights[0].size(), vector<double>(weights.size()));
         dinputs = vector<vector<double>>(dvalues.size(), vector<double>(weights_T[0].size()));
         inputs_T = transpose(_inputs);
-        dweights = dotProduct(inputs_T, dvalues);
+        dweights = matrixMultiply(inputs_T, dvalues);
         dbiases = sumMatrix(dvalues, 0);
         weights_T = transpose(weights);
-        dinputs = dotProduct(dvalues, weights_T);
+        dinputs = matrixMultiply(dvalues, weights_T);
     }
 };
 
@@ -71,6 +72,7 @@ public:
     {
         inputs = input;
         output = vector<vector<double>>(input.size(), vector<double>(input[0].size()));
+        #pragma omp parallel for collapse(2) 
         for (int row = 0; row < input.size(); row++)
         {
             for (int col = 0; col < input[0].size(); col++)
@@ -86,6 +88,7 @@ public:
     void backward(vector<vector<double>> &dvalues)
     {
         dinputs = vector<vector<double>>(dvalues.size(), vector<double>(dvalues[0].size(), 0));
+        #pragma omp parallel for collapse(2) 
         for (int row = 0; row < dvalues.size(); row++)
         {
             for (int col = 0; col < dvalues[0].size(); col++)
@@ -164,6 +167,7 @@ public:
     vector<double> forward(vector<vector<double>> y_pred, vector<vector<double>> y_true)
     {
         //clip y_pred to prevent it going to infinity
+        #pragma omp parallel for collapse(2) 
         for (int row = 0; row < y_pred.size(); row++)
         {
             for (int col = 0; col < y_pred[0].size(); col++)
@@ -193,6 +197,7 @@ public:
         sum = sumMatrix(y_pred, 1);
 
         //compute negative log loss of each sample
+        #pragma omp parallel for 
         for (int row = 0; row < sum.size(); row++)
         {
             sum[row] = -1 * log(sum[row]);
@@ -227,6 +232,7 @@ public:
         }
 
         dinputs = dvalues;
+        #pragma omp parallel for collapse(2) 
         for (int row = 0; row < dinputs.size(); row++)
         {
             for (int col = 0; col < dinputs[0].size(); col++)
@@ -268,7 +274,6 @@ public:
     void update_params(Dense &A)
     {
         vector<vector<double>> weight_updates(A.weights.size(), vector<double>(A.weights[0].size()));
-        vector<double> bias_updates(A.biases.size());
         for (int row = 0; row < A.weights.size(); row++)
         {
             for (int col = 0; col < A.weights[0].size(); col++)
@@ -279,6 +284,7 @@ public:
             }
         }
 
+        vector<double> bias_updates(A.biases.size());
         for (int col = 0; col < A.dbiases.size(); col++)
         {
             bias_updates[col] = _momentum * A.bias_momentums[col] + current_lr * A.dbiases[col];
@@ -300,6 +306,7 @@ double accuracy(vector<vector<double>> &y_pred, vector<vector<double>> &y_true)
     vector<double> preds = argmax(y_pred);
     vector<double> gnd_true = argmax(y_true);
     float sum = 0;
+
     for(int sample = 0; sample < preds.size(); sample++)
     {
         if(preds[sample] == gnd_true[sample])

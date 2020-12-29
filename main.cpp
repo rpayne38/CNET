@@ -3,7 +3,7 @@
 #include <fstream>
 #include <vector>
 #include "CNet.h"
-#include <ctime>
+#include <sys/time.h>
 using namespace std;
 
 int reverseInt (int i) 
@@ -79,8 +79,8 @@ vector<vector<double>> read_mnist_labels(string path)
 
 int main()
 {
-    clock_t start;
-    start = clock();
+    struct timeval start, end;
+    gettimeofday(&start, NULL);
 
     cout << "Loading data...\n";
     vector<vector<double>> dataset = read_mnist_imgs("/home/rob/Documents/c++/train-images.idx3-ubyte");
@@ -129,7 +129,10 @@ int main()
 
     cout << "\n";
 
-    double duration = (clock() - start) / (double) CLOCKS_PER_SEC;
-    cout << duration << "secs";
+    gettimeofday(&end, NULL);
+    float delta = ((end.tv_sec - start.tv_sec) * 1000000u +
+             end.tv_usec - start.tv_usec) /
+            1.e6;
+    cout << delta << "secs";
     cout << "\n";
 }
