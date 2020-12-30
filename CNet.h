@@ -23,9 +23,9 @@ public:
     {
         weights = vector<vector<double>>(n_inputs, vector<double>(n_neurons));
         #pragma omp parallel for collapse(2) 
-        for (int row = 0; row < n_inputs; row++)
+        for (unsigned int row = 0; row < n_inputs; row++)
         {
-            for (int col = 0; col < n_neurons; col++)
+            for (unsigned int col = 0; col < n_neurons; col++)
             {
                 weights[row][col] = 0.01 * getRandomDouble(-1, 1);
             }
@@ -40,7 +40,7 @@ public:
     {
         _inputs = inputs;
         output = matrixMultiply(inputs, weights);
-        for (int i = 0; i < output.size(); i++)
+        for (unsigned int i = 0; i < output.size(); i++)
         {
             output[i] = matrixAdd(output[i], biases);
         }
@@ -73,9 +73,9 @@ public:
         inputs = input;
         output = vector<vector<double>>(input.size(), vector<double>(input[0].size()));
         #pragma omp parallel for collapse(2) 
-        for (int row = 0; row < input.size(); row++)
+        for (unsigned int row = 0; row < input.size(); row++)
         {
-            for (int col = 0; col < input[0].size(); col++)
+            for (unsigned int col = 0; col < input[0].size(); col++)
             {
                 if (input[row][col] > 0)
                 {
@@ -89,9 +89,9 @@ public:
     {
         dinputs = vector<vector<double>>(dvalues.size(), vector<double>(dvalues[0].size(), 0));
         #pragma omp parallel for collapse(2) 
-        for (int row = 0; row < dvalues.size(); row++)
+        for (unsigned int row = 0; row < dvalues.size(); row++)
         {
-            for (int col = 0; col < dvalues[0].size(); col++)
+            for (unsigned int col = 0; col < dvalues[0].size(); col++)
             {
                 if (inputs[row][col] > 0)
                 {
@@ -111,9 +111,9 @@ public:
     {
         //find max of each row
         vector<double> max(input.size(), 0);
-        for (int row = 0; row < input.size(); row++)
+        for (unsigned int row = 0; row < input.size(); row++)
         {
-            for (int col = 0; col < input[0].size(); col++)
+            for (unsigned int col = 0; col < input[0].size(); col++)
             {
                 if (input[row][col] > max[row])
                 {
@@ -123,9 +123,9 @@ public:
         }
 
         vector<vector<double>> exp_values(input.size(), vector<double>(input[0].size()));
-        for (int row = 0; row < input.size(); row++)
+        for (unsigned int row = 0; row < input.size(); row++)
         {
-            for (int col = 0; col < input[0].size(); col++)
+            for (unsigned int col = 0; col < input[0].size(); col++)
             {
                 exp_values[row][col] = exp(input[row][col] - max[row]);
             }
@@ -135,9 +135,9 @@ public:
         sum = sumMatrix(exp_values, 1);
 
         output = vector<vector<double>>(input.size(), vector<double>(input[0].size()));
-        for (int row = 0; row < input.size(); row++)
+        for (unsigned int row = 0; row < input.size(); row++)
         {
-            for (int col = 0; col < input[0].size(); col++)
+            for (unsigned int col = 0; col < input[0].size(); col++)
             {
                 output[row][col] = exp_values[row][col] / sum[row];
             }
@@ -153,7 +153,7 @@ public:
     {
         vector<double> sample_losses = forward(output, y);
         float sum = 0;
-        for (int i = 0; i < sample_losses.size(); i++)
+        for (unsigned int i = 0; i < sample_losses.size(); i++)
         {
             sum += sample_losses[i];
         }
@@ -168,9 +168,9 @@ public:
     {
         //clip y_pred to prevent it going to infinity
         #pragma omp parallel for collapse(2) 
-        for (int row = 0; row < y_pred.size(); row++)
+        for (unsigned int row = 0; row < y_pred.size(); row++)
         {
-            for (int col = 0; col < y_pred[0].size(); col++)
+            for (unsigned int col = 0; col < y_pred[0].size(); col++)
             {
                 if (y_pred[row][col] < 1e-7)
                 {
@@ -184,9 +184,9 @@ public:
         }
 
         //multiply each prediction by each y_true
-        for (int row = 0; row < y_pred.size(); row++)
+        for (unsigned int row = 0; row < y_pred.size(); row++)
         {
-            for (int col = 0; col < y_pred[0].size(); col++)
+            for (unsigned int col = 0; col < y_pred[0].size(); col++)
             {
                 y_pred[row][col] = y_pred[row][col] * y_true[row][col];
             }
@@ -198,7 +198,7 @@ public:
 
         //compute negative log loss of each sample
         #pragma omp parallel for 
-        for (int row = 0; row < sum.size(); row++)
+        for (unsigned int row = 0; row < sum.size(); row++)
         {
             sum[row] = -1 * log(sum[row]);
         }
@@ -233,9 +233,9 @@ public:
 
         dinputs = dvalues;
         #pragma omp parallel for collapse(2) 
-        for (int row = 0; row < dinputs.size(); row++)
+        for (unsigned int row = 0; row < dinputs.size(); row++)
         {
-            for (int col = 0; col < dinputs[0].size(); col++)
+            for (unsigned int col = 0; col < dinputs[0].size(); col++)
             {
                 if (y_true[row][col] == 1)
                 {
@@ -245,9 +245,9 @@ public:
         }
 
         int num_samples = dinputs.size();
-        for (int row = 0; row < dinputs.size(); row++)
+        for (unsigned int row = 0; row < dinputs.size(); row++)
         {
-            for (int col = 0; col < dinputs[0].size(); col++)
+            for (unsigned int col = 0; col < dinputs[0].size(); col++)
             {
                 dinputs[row][col] /= num_samples;
             }
@@ -274,9 +274,9 @@ public:
     void update_params(Dense &A)
     {
         vector<vector<double>> weight_updates(A.weights.size(), vector<double>(A.weights[0].size()));
-        for (int row = 0; row < A.weights.size(); row++)
+        for (unsigned int row = 0; row < A.weights.size(); row++)
         {
-            for (int col = 0; col < A.weights[0].size(); col++)
+            for (unsigned int col = 0; col < A.weights[0].size(); col++)
             {
                 weight_updates[row][col] = _momentum * A.weight_momentums[row][col] + current_lr * A.dweights[row][col];
                 A.weight_momentums[row][col] = weight_updates[row][col];
@@ -285,7 +285,7 @@ public:
         }
 
         vector<double> bias_updates(A.biases.size());
-        for (int col = 0; col < A.dbiases.size(); col++)
+        for (unsigned int col = 0; col < A.dbiases.size(); col++)
         {
             bias_updates[col] = _momentum * A.bias_momentums[col] + current_lr * A.dbiases[col];
             A.bias_momentums[col] = bias_updates[col];
@@ -307,7 +307,7 @@ double accuracy(vector<vector<double>> &y_pred, vector<vector<double>> &y_true)
     vector<double> gnd_true = argmax(y_true);
     float sum = 0;
 
-    for(int sample = 0; sample < preds.size(); sample++)
+    for(unsigned int sample = 0; sample < preds.size(); sample++)
     {
         if(preds[sample] == gnd_true[sample])
         {

@@ -23,9 +23,9 @@ vector<vector<double>> read_mnist_imgs(string path)
     if (file.is_open())
     {
         int magic_number=0;
-        int number_of_images=0;
-        int n_rows=0;
-        int n_cols=0;
+        unsigned int number_of_images=0;
+        unsigned int n_rows=0;
+        unsigned int n_cols=0;
         file.read((char*)&magic_number,sizeof(magic_number)); 
         magic_number= reverseInt(magic_number);
         file.read((char*)&number_of_images,sizeof(number_of_images));
@@ -35,11 +35,11 @@ vector<vector<double>> read_mnist_imgs(string path)
         file.read((char*)&n_cols,sizeof(n_cols));
         n_cols= reverseInt(n_cols);
         vector<vector<double>> dataset(number_of_images, vector<double>(n_rows*n_cols));
-        for(int i=0;i<number_of_images;++i)
+        for(unsigned int i=0;i<number_of_images;++i)
         {
-            for(int r=0;r<n_rows;++r)
+            for(unsigned int r=0;r<n_rows;++r)
             {
-                for(int c=0;c<n_cols;++c)
+                for(unsigned int c=0;c<n_cols;++c)
                 {
                     unsigned char temp=0;
                     file.read((char*)&temp,sizeof(temp));
@@ -56,15 +56,16 @@ vector<vector<double>> read_mnist_labels(string path)
 {
     ifstream file (path, ios::binary);
     if (file.is_open())
-    {
+    {   
+        unsigned int labels = 10;
         int magic_number=0;
-        int number_of_labels=0;
+        unsigned int number_of_labels=0;
         file.read((char*)&magic_number,sizeof(magic_number)); 
         magic_number= reverseInt(magic_number);
         file.read((char*)&number_of_labels,sizeof(number_of_labels));
         number_of_labels= reverseInt(number_of_labels);
-        vector<vector<double>> dataset(number_of_labels, vector<double>(10, 0));
-        for(int i=0;i<number_of_labels;++i)
+        vector<vector<double>> dataset(number_of_labels, vector<double>(labels, 0));
+        for(unsigned int i=0;i<number_of_labels;++i)
         {
             {
                 unsigned char temp=0;
@@ -88,11 +89,11 @@ int main()
 
     cout << "Loading model...\n";
     //declare model
-    Dense Dense1(28*28, 32);
+    Dense Dense1(28*28, 16);
     Relu Activation1;
-    Dense Dense2(32, 64);
+    Dense Dense2(16, 16);
     Relu Activation2;
-    Dense Dense3(64, 10);
+    Dense Dense3(16, 10);
     SoftmaxwithLoss softmax;
     SGD optimizer(0.02, 0.1, 0.9);
 
@@ -127,6 +128,7 @@ int main()
         optimizer.decay_lr();
     }
 
+    printMatrix1D(softmax.output[1]);
     cout << "\n";
 
     gettimeofday(&end, NULL);
