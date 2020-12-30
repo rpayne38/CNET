@@ -86,20 +86,20 @@ int main()
     gettimeofday(&start, NULL);
 
     cout << "Loading data...\n";
-    vector<vector<double>> dataset = read_mnist_imgs("/home/rob/Documents/c++/train-images.idx3-ubyte");
-    vector<vector<double>> labels = read_mnist_labels("/home/rob/Documents/c++/train-labels.idx1-ubyte");
+    vector<vector<double>> dataset = read_mnist_imgs("train-images.idx3-ubyte");
+    vector<vector<double>> labels = read_mnist_labels("train-labels.idx1-ubyte");
 
     cout << "Loading model...\n";
     //declare model
-    Dense Dense1(28*28, 16);
+    Dense Dense1(28*28, 32);
     Relu Activation1;
-    Dense Dense2(16, 16);
+    Dense Dense2(32, 32);
     Relu Activation2;
-    Dense Dense3(16, 10);
+    Dense Dense3(32, 10);
     SoftmaxwithLoss softmax;
-    SGD optimizer(0.02, 0.1, 0.9);
+    SGD optimizer(0.01, 0.05, 0.9);
 
-    int epochs = 20;
+    int epochs = 50;
 
     for (int epoch = 0; epoch < epochs; epoch++)
     {
@@ -132,9 +132,7 @@ int main()
     cout << "\n";
 
     gettimeofday(&end, NULL);
-    float delta = ((end.tv_sec - start.tv_sec) * 1000000u +
-             end.tv_usec - start.tv_usec) /
-            1.e6;
+    float delta = ((end.tv_sec - start.tv_sec) * 1000000u + end.tv_usec - start.tv_usec) / 1.e6;
     cout << delta << "secs";
     cout << "\n";
 }
