@@ -148,7 +148,7 @@ public:
 class Loss
 {
 public:
-    virtual vector<double> forward(vector<vector<double>> output, vector<vector<double>> y){};
+    virtual vector<double> forward(vector<vector<double>> output, vector<vector<double>> y) = 0;
     float calculate(vector<vector<double>> &output, vector<vector<double>> &y)
     {
         vector<double> sample_losses = forward(output, y);

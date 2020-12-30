@@ -80,7 +80,7 @@ vector<double> sumMatrix(vector<vector<double>> &mat, int axis)
     vector<double> sum;
     if (axis == 0)
     {
-        vector<double> sum = vector<double>(mat[0].size(), 0);
+        sum = vector<double>(mat[0].size(), 0);
         #pragma omp parallel for collapse(2) 
         for (unsigned int row = 0; row < mat.size(); row++)
         {
@@ -89,11 +89,10 @@ vector<double> sumMatrix(vector<vector<double>> &mat, int axis)
                 sum[col] += mat[row][col];
             }
         }
-        return sum;
     }
     else if (axis == 1)
     {
-        vector<double> sum = vector<double>(mat.size(), 0);
+        sum = vector<double>(mat.size(), 0);
         #pragma omp parallel for collapse(2) 
         for (unsigned int row = 0; row < mat.size(); row++)
         {
@@ -102,12 +101,8 @@ vector<double> sumMatrix(vector<vector<double>> &mat, int axis)
                 sum[row] += mat[row][col];
             }
         }
-        return sum;
     }
-    else
-    {
-        cout << "Something Broke";
-    }
+    return sum;
 }
 
 vector<double> argmax(vector<vector<double>> &mat)

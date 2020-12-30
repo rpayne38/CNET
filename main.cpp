@@ -18,7 +18,8 @@ int reverseInt (int i)
     return ((int)c1 << 24) + ((int)c2 << 16) + ((int)c3 << 8) + c4;
 }
 vector<vector<double>> read_mnist_imgs(string path)
-{
+{   
+    vector<vector<double>> dataset;
     ifstream file (path, ios::binary);
     if (file.is_open())
     {
@@ -34,7 +35,7 @@ vector<vector<double>> read_mnist_imgs(string path)
         n_rows= reverseInt(n_rows);
         file.read((char*)&n_cols,sizeof(n_cols));
         n_cols= reverseInt(n_cols);
-        vector<vector<double>> dataset(number_of_images, vector<double>(n_rows*n_cols));
+        dataset = vector<vector<double>>(number_of_images, vector<double>(n_rows*n_cols));
         for(unsigned int i=0;i<number_of_images;++i)
         {
             for(unsigned int r=0;r<n_rows;++r)
@@ -47,13 +48,14 @@ vector<vector<double>> read_mnist_imgs(string path)
                 }
             }
         }
-        return dataset;
     }
     file.close();
+    return dataset;
 }
 
 vector<vector<double>> read_mnist_labels(string path)
-{
+{   
+    vector<vector<double>> dataset;
     ifstream file (path, ios::binary);
     if (file.is_open())
     {   
@@ -64,7 +66,7 @@ vector<vector<double>> read_mnist_labels(string path)
         magic_number= reverseInt(magic_number);
         file.read((char*)&number_of_labels,sizeof(number_of_labels));
         number_of_labels= reverseInt(number_of_labels);
-        vector<vector<double>> dataset(number_of_labels, vector<double>(labels, 0));
+        dataset = vector<vector<double>>(number_of_labels, vector<double>(labels, 0));
         for(unsigned int i=0;i<number_of_labels;++i)
         {
             {
@@ -73,9 +75,9 @@ vector<vector<double>> read_mnist_labels(string path)
                 dataset[i][temp] = 1;
             }
         }
-        return dataset;
     }
     file.close();
+    return dataset;
 }
 
 int main()
@@ -97,7 +99,7 @@ int main()
     SoftmaxwithLoss softmax;
     SGD optimizer(0.02, 0.1, 0.9);
 
-    int epochs = 10;
+    int epochs = 20;
 
     for (int epoch = 0; epoch < epochs; epoch++)
     {
@@ -127,8 +129,6 @@ int main()
         optimizer.update_params(Dense3);
         optimizer.decay_lr();
     }
-
-    printMatrix1D(softmax.output[1]);
     cout << "\n";
 
     gettimeofday(&end, NULL);
