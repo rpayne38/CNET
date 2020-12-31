@@ -10,4 +10,5 @@ g++ main.cpp -fopenmp
 **TODO**  
 Add mini-batching  
 Add epoch progress bar  
-Add model class
+Add model class  
+Add Adam optimizer
