@@ -1,18 +1,42 @@
 #include <iostream>
 #include <vector>
-#include <random>
+#include <memory>
 #include "np.h"
 using namespace std;
 
-class Dense
+//common base class for storing in vector
+class Layer
+{
+    public:
+    virtual void forward(vector<vector<double>> &input) {};
+    virtual void backward(vector<vector<double>> &dvalues) {};
+    virtual ~Layer() {};
+    vector<vector<double>> output;
+    vector<vector<double>> dinputs;
+    vector<vector<double>> y_true;
+};
+
+class InputLayer : public Layer
+{
+public:
+    void forward(vector<vector<double>> &inputs)
+    {
+        output = inputs;
+    }
+
+    void backward(vector<vector<double>> &dvalues)
+    {
+        dinputs = dvalues;
+    }
+};
+
+class Dense : public Layer
 {
 public:
     vector<vector<double>> weights;
     vector<double> biases;
-    vector<vector<double>> output;
     //TODO fix this awfulness
     vector<vector<double>> _inputs;
-    vector<vector<double>> dinputs;
     vector<vector<double>> dweights;
     vector<double> dbiases;
     vector<vector<double>> weight_momentums;
@@ -61,11 +85,9 @@ public:
     }
 };
 
-class Relu
+class Relu : public Layer
 {
 public:
-    vector<vector<double>> output;
-    vector<vector<double>> dinputs;
     vector<vector<double>> inputs;
 
     void forward(vector<vector<double>> &input)
@@ -102,10 +124,9 @@ public:
     }
 };
 
-class Softmax
+class Softmax : public Layer
 {
 public:
-    vector<vector<double>> output;
 
     void forward(vector<vector<double>> &input)
     {
@@ -145,7 +166,7 @@ public:
     }
 };
 
-class Loss
+class Loss : public Layer
 {
 public:
     virtual vector<double> forward(vector<vector<double>> output, vector<vector<double>> y) = 0;
@@ -206,14 +227,11 @@ public:
     }
 };
 
-class SoftmaxwithLoss
+class SoftmaxwithLoss : public Layer
 {
 public:
-    vector<vector<double>> output;
-    vector<vector<double>> dinputs;
-    float loss;
-
-    void forward(vector<vector<double>> &inputs, vector<vector<double>> &y_true)
+   float loss;
+    void forward(vector<vector<double>> &inputs)
     {
         Softmax activation;
         CategoricalCrossEntropy loss_func;
@@ -222,7 +240,7 @@ public:
         loss = loss_func.calculate(output, y_true);
     }
 
-    void backward(vector<vector<double>> &dvalues, vector<vector<double>> &y_true)
+    void backward(vector<vector<double>> &dvalues)
     {
         //if one hot change to discrete value
         vector<double> discrete;
@@ -271,25 +289,25 @@ public:
         _momentum = momentum;
     }
 
-    void update_params(Dense &A)
+    void update_params(Dense *A)
     {
-        vector<vector<double>> weight_updates(A.weights.size(), vector<double>(A.weights[0].size()));
-        for (unsigned int row = 0; row < A.weights.size(); row++)
+        vector<vector<double>> weight_updates(A -> weights.size(), vector<double>(A -> weights[0].size()));
+        for (unsigned int row = 0; row < A -> weights.size(); row++)
         {
-            for (unsigned int col = 0; col < A.weights[0].size(); col++)
+            for (unsigned int col = 0; col < A -> weights[0].size(); col++)
             {
-                weight_updates[row][col] = _momentum * A.weight_momentums[row][col] + current_lr * A.dweights[row][col];
-                A.weight_momentums[row][col] = weight_updates[row][col];
-                A.weights[row][col] -= weight_updates[row][col];
+                weight_updates[row][col] = _momentum * A -> weight_momentums[row][col] + current_lr * A -> dweights[row][col];
+                A -> weight_momentums[row][col] = weight_updates[row][col];
+                A -> weights[row][col] -= weight_updates[row][col];
             }
         }
 
-        vector<double> bias_updates(A.biases.size());
-        for (unsigned int col = 0; col < A.dbiases.size(); col++)
+        vector<double> bias_updates(A -> biases.size());
+        for (unsigned int col = 0; col < A -> dbiases.size(); col++)
         {
-            bias_updates[col] = _momentum * A.bias_momentums[col] + current_lr * A.dbiases[col];
-            A.bias_momentums[col] = bias_updates[col];
-            A.biases[col] -= bias_updates[col];
+            bias_updates[col] = _momentum * A-> bias_momentums[col] + current_lr * A -> dbiases[col];
+            A -> bias_momentums[col] = bias_updates[col];
+            A -> biases[col] -= bias_updates[col];
         }
     }
 
@@ -317,3 +335,34 @@ double accuracy(vector<vector<double>> &y_pred, vector<vector<double>> &y_true)
     float acc = sum / preds.size();
     return acc;
 }
+
+class Model
+{
+public:
+    vector<Layer*> layers;
+    
+    void add(Layer A)
+    {
+
+    }
+
+    void compile()
+    {
+
+    }
+
+    void forward()
+    {
+
+    }
+
+    void backward()
+    {
+
+    }
+
+    void train()
+    {
+
+    }
+};
