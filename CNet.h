@@ -1,19 +1,25 @@
-#include <iostream>
 #include <vector>
-#include <memory>
 #include "np.h"
+#include <algorithm>
 using namespace std;
 
 //common base class for storing in vector
 class Layer
 {
-    public:
-    virtual void forward(vector<vector<double>> &input) {};
-    virtual void backward(vector<vector<double>> &dvalues) {};
-    virtual ~Layer() {};
+public:
+    virtual void forward(vector<vector<double>> &input){};
+    virtual void backward(vector<vector<double>> &dvalues){};
+    virtual bool HasWeights(void) { return false; }
+    virtual ~Layer(){};
     vector<vector<double>> output;
     vector<vector<double>> dinputs;
     vector<vector<double>> y_true;
+    vector<vector<double>> weights;
+    vector<double> biases;
+    vector<vector<double>> dweights;
+    vector<double> dbiases;
+    vector<vector<double>> weight_momentums;
+    vector<double> bias_momentums;
 };
 
 class InputLayer : public Layer
@@ -33,20 +39,14 @@ public:
 class Dense : public Layer
 {
 public:
-    vector<vector<double>> weights;
-    vector<double> biases;
-    //TODO fix this awfulness
     vector<vector<double>> _inputs;
-    vector<vector<double>> dweights;
-    vector<double> dbiases;
-    vector<vector<double>> weight_momentums;
-    vector<double> bias_momentums;
+    virtual bool HasWeights(void) { return true; }
 
     //constructor
     Dense(unsigned int n_inputs, unsigned int n_neurons)
     {
         weights = vector<vector<double>>(n_inputs, vector<double>(n_neurons));
-        #pragma omp parallel for collapse(2) 
+#pragma omp parallel for collapse(2)
         for (unsigned int row = 0; row < n_inputs; row++)
         {
             for (unsigned int col = 0; col < n_neurons; col++)
@@ -57,7 +57,6 @@ public:
         biases = vector<double>(n_neurons, 0);
         weight_momentums = vector<vector<double>>(n_inputs, vector<double>(n_neurons, 0));
         bias_momentums = vector<double>(n_neurons, 0);
-        
     }
 
     void forward(vector<vector<double>> &inputs)
@@ -94,7 +93,7 @@ public:
     {
         inputs = input;
         output = vector<vector<double>>(input.size(), vector<double>(input[0].size()));
-        #pragma omp parallel for collapse(2) 
+#pragma omp parallel for collapse(2)
         for (unsigned int row = 0; row < input.size(); row++)
         {
             for (unsigned int col = 0; col < input[0].size(); col++)
@@ -110,7 +109,7 @@ public:
     void backward(vector<vector<double>> &dvalues)
     {
         dinputs = vector<vector<double>>(dvalues.size(), vector<double>(dvalues[0].size(), 0));
-        #pragma omp parallel for collapse(2) 
+#pragma omp parallel for collapse(2)
         for (unsigned int row = 0; row < dvalues.size(); row++)
         {
             for (unsigned int col = 0; col < dvalues[0].size(); col++)
@@ -127,7 +126,6 @@ public:
 class Softmax : public Layer
 {
 public:
-
     void forward(vector<vector<double>> &input)
     {
         //find max of each row
@@ -187,8 +185,8 @@ class CategoricalCrossEntropy : public Loss
 public:
     vector<double> forward(vector<vector<double>> y_pred, vector<vector<double>> y_true)
     {
-        //clip y_pred to prevent it going to infinity
-        #pragma omp parallel for collapse(2) 
+//clip y_pred to prevent it going to infinity
+#pragma omp parallel for collapse(2)
         for (unsigned int row = 0; row < y_pred.size(); row++)
         {
             for (unsigned int col = 0; col < y_pred[0].size(); col++)
@@ -217,8 +215,8 @@ public:
         vector<double> sum(y_pred.size(), 0);
         sum = sumMatrix(y_pred, 1);
 
-        //compute negative log loss of each sample
-        #pragma omp parallel for 
+//compute negative log loss of each sample
+#pragma omp parallel for
         for (unsigned int row = 0; row < sum.size(); row++)
         {
             sum[row] = -1 * log(sum[row]);
@@ -230,7 +228,7 @@ public:
 class SoftmaxwithLoss : public Layer
 {
 public:
-   float loss;
+    float loss;
     void forward(vector<vector<double>> &inputs)
     {
         Softmax activation;
@@ -250,7 +248,7 @@ public:
         }
 
         dinputs = dvalues;
-        #pragma omp parallel for collapse(2) 
+#pragma omp parallel for collapse(2)
         for (unsigned int row = 0; row < dinputs.size(); row++)
         {
             for (unsigned int col = 0; col < dinputs[0].size(); col++)
@@ -289,25 +287,31 @@ public:
         _momentum = momentum;
     }
 
-    void update_params(Dense *A)
+    void update_params(vector<Layer *> model)
     {
-        vector<vector<double>> weight_updates(A -> weights.size(), vector<double>(A -> weights[0].size()));
-        for (unsigned int row = 0; row < A -> weights.size(); row++)
+        for (int layer = 0; layer < model.size(); layer++)
         {
-            for (unsigned int col = 0; col < A -> weights[0].size(); col++)
+            if (model[layer]->HasWeights())
             {
-                weight_updates[row][col] = _momentum * A -> weight_momentums[row][col] + current_lr * A -> dweights[row][col];
-                A -> weight_momentums[row][col] = weight_updates[row][col];
-                A -> weights[row][col] -= weight_updates[row][col];
-            }
-        }
+                vector<vector<double>> weight_updates(model[layer]->weights.size(), vector<double>(model[layer]->weights[0].size()));
+                for (unsigned int row = 0; row < model[layer]->weights.size(); row++)
+                {
+                    for (unsigned int col = 0; col < model[layer]->weights[0].size(); col++)
+                    {
+                        weight_updates[row][col] = _momentum * model[layer]->weight_momentums[row][col] + current_lr * model[layer]->dweights[row][col];
+                        model[layer]->weight_momentums[row][col] = weight_updates[row][col];
+                        model[layer]->weights[row][col] -= weight_updates[row][col];
+                    }
+                }
 
-        vector<double> bias_updates(A -> biases.size());
-        for (unsigned int col = 0; col < A -> dbiases.size(); col++)
-        {
-            bias_updates[col] = _momentum * A-> bias_momentums[col] + current_lr * A -> dbiases[col];
-            A -> bias_momentums[col] = bias_updates[col];
-            A -> biases[col] -= bias_updates[col];
+                vector<double> bias_updates(model[layer]->biases.size());
+                for (unsigned int col = 0; col < model[layer]->dbiases.size(); col++)
+                {
+                    bias_updates[col] = _momentum * model[layer]->bias_momentums[col] + current_lr * model[layer]->dbiases[col];
+                    model[layer]->bias_momentums[col] = bias_updates[col];
+                    model[layer]->biases[col] -= bias_updates[col];
+                }
+            }
         }
     }
 
@@ -318,16 +322,15 @@ public:
     }
 };
 
-
 double accuracy(vector<vector<double>> &y_pred, vector<vector<double>> &y_true)
 {
     vector<double> preds = argmax(y_pred);
     vector<double> gnd_true = argmax(y_true);
     float sum = 0;
 
-    for(unsigned int sample = 0; sample < preds.size(); sample++)
+    for (unsigned int sample = 0; sample < preds.size(); sample++)
     {
-        if(preds[sample] == gnd_true[sample])
+        if (preds[sample] == gnd_true[sample])
         {
             sum += 1;
         }
@@ -339,30 +342,53 @@ double accuracy(vector<vector<double>> &y_pred, vector<vector<double>> &y_true)
 class Model
 {
 public:
-    vector<Layer*> layers;
-    
-    void add(Layer A)
-    {
+    vector<Layer*> model;
+    SGD optimizer;
 
+    template <class newLayer>
+    void add(newLayer A)
+    {
+        model.push_back(new A());
     }
 
-    void compile()
+    void compile(SGD opt)
     {
-
+        optimizer = opt;
     }
 
-    void forward()
+    void forward(vector<vector<double>> dataset)
     {
-
+        model[0]->forward(dataset);
+        for (int i = 1; i < model.size(); i++)
+        {
+            model[i]->forward(model[i - 1]->output);
+        }
     }
 
-    void backward()
+    void backward(vector<vector<double>> dataset, vector<vector<double>> labels)
     {
-
+        model.back()->backward(model.back()->output);
+        for (int i = model.size() - 1; i > 0; i--)
+        {
+            model[i]->backward(model[i + 1]->dinputs);
+        }
     }
 
-    void train()
+    void train(vector<vector<double>> dataset, vector<vector<double>> labels, int epochs)
     {
+        for (int epoch = 0; epoch < epochs; epoch++)
+        {
+            cout << "Epoch: " << epoch + 1 << "\n";
 
+            forward(dataset);
+
+            cout << "Accuracy: " << accuracy(model[6]->output, labels) << "\t"
+                 << "Lr: " << optimizer.current_lr << "\n";
+
+            backward(dataset, labels);
+
+            optimizer.update_params(model);
+            optimizer.decay_lr();
+        }
     }
 };

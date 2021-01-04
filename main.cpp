@@ -92,23 +92,15 @@ int main()
     cout << "Loading model...\n";
      
     //declare model
-    Layer *model[7];
-    InputLayer *Input = new InputLayer();
-    Dense *Dense1 = new Dense(28*28, 32);
-    Relu *Activation1 = new Relu();
-    Dense *Dense2 = new Dense(32, 32);
-    Relu *Activation2 = new Relu();
-    Dense *Dense3 = new Dense(32, 10);
-    SoftmaxwithLoss *softmax = new SoftmaxwithLoss();
+    vector<Layer*> model;
+    model.push_back(new InputLayer());
+    model.push_back(new Dense(28*28, 32));
+    model.push_back(new Relu());
+    model.push_back(new Dense(32, 32));
+    model.push_back(new Relu());
+    model.push_back(new Dense(32, 10));
+    model.push_back(new SoftmaxwithLoss());
     SGD optimizer(0.01, 0.05, 0.9);
-
-    model[0] = Input;
-    model[1] = Dense1;
-    model[2] = Activation1;
-    model[3] = Dense2;
-    model[4] = Activation2;
-    model[5] = Dense3;
-    model[6] = softmax;
     model[6] -> y_true = labels;
 
     int epochs = 50;
@@ -118,25 +110,23 @@ int main()
         cout << "Epoch: " << epoch + 1 << "\n";
 
         //forward pass
-        Input -> forward(dataset);
+        model[0] -> forward(dataset);
         for(int i = 1; i < 7; i++)
         {
             model[i] -> forward(model[i-1] -> output);
         }
 
-        cout << "Loss: " << softmax -> loss << "\tAccuracy: " << accuracy(softmax -> output, labels) << "\t" << "Lr: " << optimizer.current_lr << "\n";
+        cout  << "Accuracy: " << accuracy(model[6] -> output, labels) << "\t" << "Lr: " << optimizer.current_lr << "\n";
 
         //backward pass
-        softmax -> backward(softmax -> output);
+        model[6] -> backward(model[6] -> output);
         for(int i = 5; i > 0; i--)
         {
             model[i] -> backward(model[i+1] -> dinputs);
         }
 
         //update params
-        optimizer.update_params(Dense1);
-        optimizer.update_params(Dense2);
-        optimizer.update_params(Dense3);
+        optimizer.update_params(model);
         optimizer.decay_lr();
     }
 
