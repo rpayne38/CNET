@@ -20,7 +20,6 @@ public:
     Dense(unsigned int n_inputs, unsigned int n_neurons)
     {
         weights = vector<vector<double>>(n_inputs, vector<double>(n_neurons));
-#pragma omp parallel for collapse(2)
         for (unsigned int row = 0; row < n_inputs; row++)
         {
             for (unsigned int col = 0; col < n_neurons; col++)
@@ -69,7 +68,6 @@ public:
     {
         inputs = input;
         output = vector<vector<double>>(input.size(), vector<double>(input[0].size()));
-#pragma omp parallel for collapse(2)
         for (unsigned int row = 0; row < input.size(); row++)
         {
             for (unsigned int col = 0; col < input[0].size(); col++)
@@ -85,7 +83,6 @@ public:
     void backward(vector<vector<double>> &dvalues)
     {
         dinputs = vector<vector<double>>(dvalues.size(), vector<double>(dvalues[0].size(), 0));
-#pragma omp parallel for collapse(2)
         for (unsigned int row = 0; row < dvalues.size(); row++)
         {
             for (unsigned int col = 0; col < dvalues[0].size(); col++)
@@ -164,7 +161,6 @@ public:
     vector<double> forward(vector<vector<double>> y_pred, vector<vector<double>> y_true)
     {
 //clip y_pred to prevent it going to infinity
-#pragma omp parallel for collapse(2)
         for (unsigned int row = 0; row < y_pred.size(); row++)
         {
             for (unsigned int col = 0; col < y_pred[0].size(); col++)
@@ -194,7 +190,6 @@ public:
         sum = sumMatrix(y_pred, 1);
 
 //compute negative log loss of each sample
-#pragma omp parallel for
         for (unsigned int row = 0; row < sum.size(); row++)
         {
             sum[row] = -1 * log(sum[row]);
@@ -229,7 +224,6 @@ public:
         }
 
         dinputs = dvalues;
-#pragma omp parallel for collapse(2)
         for (unsigned int row = 0; row < dinputs.size(); row++)
         {
             for (unsigned int col = 0; col < dinputs[0].size(); col++)

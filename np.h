@@ -32,7 +32,6 @@ vector<vector<double>> matrixMultiply(vector<vector<double>> &x, vector<vector<d
 vector<double> matrixAdd(vector<double> &x, vector<double> &y)
 {
     vector<double> output(x.size());
-#pragma omp parallel for
     for (unsigned int i = 0; i < x.size(); i++)
     {
         output[i] = x[i] + y[i];
@@ -64,7 +63,6 @@ void printMatrix1D(vector<double> &mat)
 vector<vector<double>> transpose(vector<vector<double>> &mat)
 {
     vector<vector<double>> result(mat[0].size(), vector<double>(mat.size()));
-#pragma omp parallel for collapse(2)
     for (unsigned int i = 0; i < mat.size(); i++)
     {
         for (unsigned int j = 0; j < mat[0].size(); j++)
@@ -81,7 +79,6 @@ vector<double> sumMatrix(vector<vector<double>> &mat, int axis)
     if (axis == 0)
     {
         sum = vector<double>(mat[0].size(), 0);
-#pragma omp parallel for collapse(2)
         for (unsigned int row = 0; row < mat.size(); row++)
         {
             for (unsigned int col = 0; col < mat[0].size(); col++)
@@ -93,7 +90,6 @@ vector<double> sumMatrix(vector<vector<double>> &mat, int axis)
     else if (axis == 1)
     {
         sum = vector<double>(mat.size(), 0);
-#pragma omp parallel for collapse(2)
         for (unsigned int row = 0; row < mat.size(); row++)
         {
             for (unsigned int col = 0; col < mat[0].size(); col++)
