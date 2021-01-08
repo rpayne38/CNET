@@ -1,16 +1,17 @@
 #include <vector>
 #include "np.h"
 #include <algorithm>
+#include <omp.h>
 using namespace std;
 
-//common base class for storing in vector
+//common base class for storing layers of model in vector
 class Layer
 {
 public:
     virtual void forward(vector<vector<double>> &input){};
     virtual void backward(vector<vector<double>> &dvalues){};
     virtual bool HasWeights(void) { return false; }
-    virtual ~Layer(){};
+    virtual ~Layer() {}
     vector<vector<double>> output;
     vector<vector<double>> dinputs;
     vector<vector<double>> y_true;
@@ -18,10 +19,12 @@ public:
     vector<double> biases;
     vector<vector<double>> dweights;
     vector<double> dbiases;
-    vector<vector<double>> weight_momentums;
-    vector<double> bias_momentums;
+    vector<vector<double>> weightmomentums;
+    vector<double> biasmomentums;
+    float loss;
 };
 
+//probably unneccessary
 class InputLayer : public Layer
 {
 public:
@@ -46,7 +49,6 @@ public:
     Dense(unsigned int n_inputs, unsigned int n_neurons)
     {
         weights = vector<vector<double>>(n_inputs, vector<double>(n_neurons));
-#pragma omp parallel for collapse(2)
         for (unsigned int row = 0; row < n_inputs; row++)
         {
             for (unsigned int col = 0; col < n_neurons; col++)
@@ -55,8 +57,8 @@ public:
             }
         }
         biases = vector<double>(n_neurons, 0);
-        weight_momentums = vector<vector<double>>(n_inputs, vector<double>(n_neurons, 0));
-        bias_momentums = vector<double>(n_neurons, 0);
+        weightmomentums = vector<vector<double>>(n_inputs, vector<double>(n_neurons, 0));
+        biasmomentums = vector<double>(n_neurons, 0);
     }
 
     void forward(vector<vector<double>> &inputs)
@@ -93,7 +95,6 @@ public:
     {
         inputs = input;
         output = vector<vector<double>>(input.size(), vector<double>(input[0].size()));
-#pragma omp parallel for collapse(2)
         for (unsigned int row = 0; row < input.size(); row++)
         {
             for (unsigned int col = 0; col < input[0].size(); col++)
@@ -109,7 +110,6 @@ public:
     void backward(vector<vector<double>> &dvalues)
     {
         dinputs = vector<vector<double>>(dvalues.size(), vector<double>(dvalues[0].size(), 0));
-#pragma omp parallel for collapse(2)
         for (unsigned int row = 0; row < dvalues.size(); row++)
         {
             for (unsigned int col = 0; col < dvalues[0].size(); col++)
@@ -185,8 +185,7 @@ class CategoricalCrossEntropy : public Loss
 public:
     vector<double> forward(vector<vector<double>> y_pred, vector<vector<double>> y_true)
     {
-//clip y_pred to prevent it going to infinity
-#pragma omp parallel for collapse(2)
+        //clip y_pred to prevent it going to infinity
         for (unsigned int row = 0; row < y_pred.size(); row++)
         {
             for (unsigned int col = 0; col < y_pred[0].size(); col++)
@@ -215,8 +214,7 @@ public:
         vector<double> sum(y_pred.size(), 0);
         sum = sumMatrix(y_pred, 1);
 
-//compute negative log loss of each sample
-#pragma omp parallel for
+        //compute negative log loss of each sample
         for (unsigned int row = 0; row < sum.size(); row++)
         {
             sum[row] = -1 * log(sum[row]);
@@ -228,7 +226,6 @@ public:
 class SoftmaxwithLoss : public Layer
 {
 public:
-    float loss;
     void forward(vector<vector<double>> &inputs)
     {
         Softmax activation;
@@ -248,7 +245,6 @@ public:
         }
 
         dinputs = dvalues;
-#pragma omp parallel for collapse(2)
         for (unsigned int row = 0; row < dinputs.size(); row++)
         {
             for (unsigned int col = 0; col < dinputs[0].size(); col++)
@@ -274,18 +270,12 @@ public:
 class SGD
 {
 public:
-    float _lr;
-    float current_lr;
-    float _decay;
-    int _step = 0;
-    float _momentum = 0;
-    SGD(float lr, float decay, float momentum)
-    {
-        _lr = lr;
-        current_lr = lr;
-        _decay = decay;
-        _momentum = momentum;
-    }
+    float lr;
+    float currentlr;
+    float decay;
+    int step = 0;
+    float momentum = 0;
+    SGD(float input_lr, float input_decay, float input_momentum) : lr{input_lr}, currentlr{input_lr}, decay{input_decay}, momentum{input_momentum} {}
 
     void update_params(vector<Layer *> model)
     {
@@ -298,8 +288,8 @@ public:
                 {
                     for (unsigned int col = 0; col < model[layer]->weights[0].size(); col++)
                     {
-                        weight_updates[row][col] = _momentum * model[layer]->weight_momentums[row][col] + current_lr * model[layer]->dweights[row][col];
-                        model[layer]->weight_momentums[row][col] = weight_updates[row][col];
+                        weight_updates[row][col] = momentum * model[layer]->weightmomentums[row][col] + currentlr * model[layer]->dweights[row][col];
+                        model[layer]->weightmomentums[row][col] = weight_updates[row][col];
                         model[layer]->weights[row][col] -= weight_updates[row][col];
                     }
                 }
@@ -307,18 +297,18 @@ public:
                 vector<double> bias_updates(model[layer]->biases.size());
                 for (unsigned int col = 0; col < model[layer]->dbiases.size(); col++)
                 {
-                    bias_updates[col] = _momentum * model[layer]->bias_momentums[col] + current_lr * model[layer]->dbiases[col];
-                    model[layer]->bias_momentums[col] = bias_updates[col];
+                    bias_updates[col] = momentum * model[layer]->biasmomentums[col] + currentlr * model[layer]->dbiases[col];
+                    model[layer]->biasmomentums[col] = bias_updates[col];
                     model[layer]->biases[col] -= bias_updates[col];
                 }
             }
         }
     }
 
-    void decay_lr()
+    void decaylr()
     {
-        current_lr = _lr * (1 / (1 + _decay * _step));
-        _step += 1;
+        currentlr = lr * (1 / (1 + decay * step));
+        step += 1;
     }
 };
 
@@ -342,53 +332,45 @@ double accuracy(vector<vector<double>> &y_pred, vector<vector<double>> &y_true)
 class Model
 {
 public:
-    vector<Layer*> model;
-    SGD optimizer;
+    vector<vector<Layer *>> ParallelModel;
+    unsigned int n_threads;
 
-    template <class newLayer>
-    void add(newLayer A)
+    Model(vector<Layer *> input_model, unsigned int input_threads)
     {
-        model.push_back(new A());
+        n_threads = input_threads;
+        vector<vector<Layer *>> ParallelModel(n_threads);
+        for(unsigned int thread = 0; thread < n_threads; thread++)
+        {
+            ParallelModel[thread] = input_model;
+        }
     }
 
-    void compile(SGD opt)
+    void forward(vector<vector<double>> dataset, vector<Layer *> model)
     {
-        optimizer = opt;
-    }
-
-    void forward(vector<vector<double>> dataset)
-    {
-        model[0]->forward(dataset);
+        model.front()->forward(dataset);
         for (int i = 1; i < model.size(); i++)
         {
             model[i]->forward(model[i - 1]->output);
         }
     }
 
-    void backward(vector<vector<double>> dataset, vector<vector<double>> labels)
+    void backward(vector<vector<double>> dataset, vector<vector<double>> labels, vector<Layer *> model)
     {
+        model.back()->y_true = labels;
         model.back()->backward(model.back()->output);
-        for (int i = model.size() - 1; i > 0; i--)
+        for (int i = model.size() - 2; i > 0; i--)
         {
             model[i]->backward(model[i + 1]->dinputs);
         }
     }
 
-    void train(vector<vector<double>> dataset, vector<vector<double>> labels, int epochs)
-    {
-        for (int epoch = 0; epoch < epochs; epoch++)
+    void train(vector<vector<vector<double>>> dataset, vector<vector<vector<double>>> labels)
+    {   
+        #pragma omp parallel for
+        for(unsigned int thread = 0; thread < n_threads; thread++)
         {
-            cout << "Epoch: " << epoch + 1 << "\n";
-
-            forward(dataset);
-
-            cout << "Accuracy: " << accuracy(model[6]->output, labels) << "\t"
-                 << "Lr: " << optimizer.current_lr << "\n";
-
-            backward(dataset, labels);
-
-            optimizer.update_params(model);
-            optimizer.decay_lr();
+            forward(dataset[thread], ParallelModel[thread]);
+            backward(dataset[thread], labels[thread], ParallelModel[thread]);
         }
     }
 };
