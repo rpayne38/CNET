@@ -63,6 +63,7 @@ void printMatrix1D(vector<double> &mat)
 vector<vector<double>> transpose(vector<vector<double>> &mat)
 {
     vector<vector<double>> result(mat[0].size(), vector<double>(mat.size()));
+    #pragma omp parallel for collapse(2)
     for (unsigned int i = 0; i < mat.size(); i++)
     {
         for (unsigned int j = 0; j < mat[0].size(); j++)
