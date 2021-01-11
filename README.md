@@ -8,7 +8,8 @@ g++ main.cpp -fopenmp
 ```
 
 **TODO**  
-Add mini-batching  
-Add epoch progress bar  
+~~Add mini-batching~~
+~~Add epoch progress bar~~  
+Add CNN layer  
 Add model class  
 Add Adam optimizer
