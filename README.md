@@ -7,9 +7,9 @@ g++ main.cpp -fopenmp
 ./a.out
 ```
 
-**TODO**  
-~~Add mini-batching~~
-~~Add epoch progress bar~~  
+**TODO**   
 Add CNN layer  
 Add model class  
-Add Adam optimizer
+Add Adam optimizer  
+~~Add mini-batching~~  
+~~Add epoch progress bar~~   
