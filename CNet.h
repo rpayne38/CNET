@@ -1,4 +1,3 @@
-#include <random>
 #include "np.h"
 using namespace std;
 
@@ -8,7 +7,6 @@ public:
     vector<vector<double>> weights;
     vector<double> biases;
     vector<vector<double>> output;
-    //TODO fix this awfulness
     vector<vector<double>> _inputs;
     vector<vector<double>> dinputs;
     vector<vector<double>> dweights;
@@ -160,7 +158,7 @@ class CategoricalCrossEntropy : public Loss
 public:
     vector<double> forward(vector<vector<double>> y_pred, vector<vector<double>> y_true)
     {
-//clip y_pred to prevent it going to infinity
+        //clip y_pred to prevent it going to infinity
         for (unsigned int row = 0; row < y_pred.size(); row++)
         {
             for (unsigned int col = 0; col < y_pred[0].size(); col++)
@@ -189,7 +187,7 @@ public:
         vector<double> sum(y_pred.size(), 0);
         sum = sumMatrix(y_pred, 1);
 
-//compute negative log loss of each sample
+        //compute negative log loss of each sample
         for (unsigned int row = 0; row < sum.size(); row++)
         {
             sum[row] = -1 * log(sum[row]);

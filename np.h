@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <random>
+#include <fstream>
 #include <omp.h>
 using namespace std;
 
@@ -63,7 +64,7 @@ void printMatrix1D(vector<double> &mat)
 vector<vector<double>> transpose(vector<vector<double>> &mat)
 {
     vector<vector<double>> result(mat[0].size(), vector<double>(mat.size()));
-    #pragma omp parallel for collapse(2)
+#pragma omp parallel for collapse(2)
     for (unsigned int i = 0; i < mat.size(); i++)
     {
         for (unsigned int j = 0; j < mat[0].size(); j++)
@@ -192,4 +193,44 @@ vector<vector<double>> read_mnist_labels(string path)
     }
     file.close();
     return dataset;
+}
+
+void batch_data(vector<vector<double>> &data, vector<vector<double>> &batched_data, int STEP)
+{
+    int BATCH_SIZE = batched_data.size();
+    auto start = data.begin() + (BATCH_SIZE * STEP);
+    auto end = data.begin() + ((STEP + 1) * BATCH_SIZE);
+    copy(start, end, batched_data.begin());
+}
+
+void ProgressBar(int step, int total)
+{
+    float progress = float(step + 1) / float(total);
+    int barWidth = 70;
+
+    std::cout << "[";
+    int pos = barWidth * progress;
+    for (int i = 0; i < barWidth; ++i)
+    {
+        if (i < pos)
+            std::cout << "=";
+        else if (i == pos)
+            std::cout << ">";
+        else
+            std::cout << " ";
+    }
+    std::cout << "] " << int(progress * 100.0) << " %\r";
+    std::cout.flush();
+}
+
+double avg(double array[], int size)
+{
+    double avg = 0.0;
+    double sum = 0.0;
+    for (int i = 0; i < size; ++i)
+    {
+        sum += array[i];
+    }
+    avg = sum / size;
+    return avg;
 }
