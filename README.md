@@ -8,7 +8,7 @@ g++ main.cpp -fopenmp -O2
 ```
 
 **TODO**   
-Add CNN layer  
+Add convolutional & max pooling layers    
 Add model class  
 Add Adam optimizer  
 ~~Add mini-batching~~  
