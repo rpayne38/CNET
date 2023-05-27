@@ -3,25 +3,29 @@
 #include <random>
 #include <fstream>
 #include <omp.h>
-using namespace std;
+
+typedef std::vector<std::vector<double>>    Matrix2d;
+typedef std::vector<double>                 Matrix1d;
 
 double getRandomDouble(double low, double high)
 {
+    using namespace std;
+
     random_device rd;
     mt19937 gen(rd());
     uniform_real_distribution<> dis(low, high);
     return dis(gen);
 }
 
-vector<vector<double>> matrixMultiply(vector<vector<double>> &x, vector<vector<double>> &y)
+Matrix2d matrixMultiply(Matrix2d&x, Matrix2d &y)
 {
-    vector<vector<double>> output = vector<vector<double>>(x.size(), vector<double>(y[0].size(), 0));
+    Matrix2d output = Matrix2d(x.size(), Matrix1d(y[0].size(), 0));
 #pragma omp parallel for collapse(3)
-    for (unsigned int i = 0; i < x.size(); i++)
+    for (int i = 0; i < x.size(); i++)
     {
-        for (unsigned int j = 0; j < y[0].size(); j++)
+        for (int j = 0; j < y[0].size(); j++)
         {
-            for (unsigned int k = 0; k < x[0].size(); k++)
+            for (int k = 0; k < x[0].size(); k++)
             {
                 output[i][j] += x[i][k] * y[k][j];
             }
@@ -30,9 +34,9 @@ vector<vector<double>> matrixMultiply(vector<vector<double>> &x, vector<vector<d
     return output;
 }
 
-vector<double> matrixAdd(vector<double> &x, vector<double> &y)
+Matrix1d matrixAdd(Matrix1d &x, Matrix1d &y)
 {
-    vector<double> output(x.size());
+    Matrix1d output(x.size());
     for (unsigned int i = 0; i < x.size(); i++)
     {
         output[i] = x[i] + y[i];
@@ -40,34 +44,34 @@ vector<double> matrixAdd(vector<double> &x, vector<double> &y)
     return output;
 }
 
-void printMatrix2D(vector<vector<double>> &mat)
+void printMatrix2D(Matrix2d &mat)
 {
     for (unsigned int i = 0; i < mat.size(); i++)
     {
         for (unsigned int j = 0; j < mat[0].size(); j++)
         {
-            cout << mat[i][j] << "  ";
+            std::cout << mat[i][j] << "  ";
         }
-        cout << endl;
+        std::cout << std::endl;
     }
 }
 
-void printMatrix1D(vector<double> &mat)
+void printMatrix1D(Matrix1d &mat)
 {
     for (unsigned int i = 0; i < mat.size(); i++)
     {
-        cout << mat[i] << "  ";
+        std::cout << mat[i] << "  ";
     }
-    cout << endl;
+    std::cout << std::endl;
 }
 
-vector<vector<double>> transpose(vector<vector<double>> &mat)
+Matrix2d transpose(Matrix2d &mat)
 {
-    vector<vector<double>> result(mat[0].size(), vector<double>(mat.size()));
+    Matrix2d result(mat[0].size(), Matrix1d(mat.size()));
 #pragma omp parallel for collapse(2)
-    for (unsigned int i = 0; i < mat.size(); i++)
+    for (int i = 0; i < mat.size(); i++)
     {
-        for (unsigned int j = 0; j < mat[0].size(); j++)
+        for (int j = 0; j < mat[0].size(); j++)
         {
             result[j][i] = mat[i][j];
         }
@@ -75,12 +79,12 @@ vector<vector<double>> transpose(vector<vector<double>> &mat)
     return result;
 }
 
-vector<double> sumMatrix(vector<vector<double>> &mat, int axis)
+Matrix1d sumMatrix(Matrix2d &mat, int axis)
 {
-    vector<double> sum;
+    Matrix1d sum;
     if (axis == 0)
     {
-        sum = vector<double>(mat[0].size(), 0);
+        sum = Matrix1d(mat[0].size(), 0);
         for (unsigned int row = 0; row < mat.size(); row++)
         {
             for (unsigned int col = 0; col < mat[0].size(); col++)
@@ -91,7 +95,7 @@ vector<double> sumMatrix(vector<vector<double>> &mat, int axis)
     }
     else if (axis == 1)
     {
-        sum = vector<double>(mat.size(), 0);
+        sum = Matrix1d(mat.size(), 0);
         for (unsigned int row = 0; row < mat.size(); row++)
         {
             for (unsigned int col = 0; col < mat[0].size(); col++)
@@ -103,9 +107,9 @@ vector<double> sumMatrix(vector<vector<double>> &mat, int axis)
     return sum;
 }
 
-vector<double> argmax(vector<vector<double>> &mat)
+Matrix1d argmax(Matrix2d &mat)
 {
-    vector<double> ans(mat.size(), 0);
+    Matrix1d ans(mat.size(), 0);
     for (unsigned int row = 0; row < mat.size(); row++)
     {
         double max = 0;
@@ -132,10 +136,10 @@ int reverseInt(int i)
 
     return ((int)c1 << 24) + ((int)c2 << 16) + ((int)c3 << 8) + c4;
 }
-vector<vector<double>> read_mnist_imgs(string path)
+Matrix2d read_mnist_imgs(std::string path)
 {
-    vector<vector<double>> dataset;
-    ifstream file(path, ios::binary);
+    Matrix2d dataset;
+    std::ifstream file(path, std::ios::binary);
     if (file.is_open())
     {
         int magic_number = 0;
@@ -150,7 +154,7 @@ vector<vector<double>> read_mnist_imgs(string path)
         n_rows = reverseInt(n_rows);
         file.read((char *)&n_cols, sizeof(n_cols));
         n_cols = reverseInt(n_cols);
-        dataset = vector<vector<double>>(number_of_images, vector<double>(n_rows * n_cols));
+        dataset = Matrix2d(number_of_images, Matrix1d(n_rows * n_cols));
         for (unsigned int i = 0; i < number_of_images; ++i)
         {
             for (unsigned int r = 0; r < n_rows; ++r)
@@ -168,10 +172,10 @@ vector<vector<double>> read_mnist_imgs(string path)
     return dataset;
 }
 
-vector<vector<double>> read_mnist_labels(string path)
+Matrix2d read_mnist_labels(std::string path)
 {
-    vector<vector<double>> dataset;
-    ifstream file(path, ios::binary);
+    Matrix2d dataset;
+    std::ifstream file(path, std::ios::binary);
     if (file.is_open())
     {
         unsigned int labels = 10;
@@ -181,7 +185,7 @@ vector<vector<double>> read_mnist_labels(string path)
         magic_number = reverseInt(magic_number);
         file.read((char *)&number_of_labels, sizeof(number_of_labels));
         number_of_labels = reverseInt(number_of_labels);
-        dataset = vector<vector<double>>(number_of_labels, vector<double>(labels, 0));
+        dataset = Matrix2d(number_of_labels, Matrix1d(labels, 0));
         for (unsigned int i = 0; i < number_of_labels; ++i)
         {
             {
@@ -195,7 +199,7 @@ vector<vector<double>> read_mnist_labels(string path)
     return dataset;
 }
 
-void batch_data(vector<vector<double>> &data, vector<vector<double>> &batched_data, int STEP)
+void batch_data(Matrix2d &data, Matrix2d &batched_data, int STEP)
 {
     int BATCH_SIZE = batched_data.size();
     auto start = data.begin() + (BATCH_SIZE * STEP);

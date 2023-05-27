@@ -21,8 +21,8 @@ int main()
 #endif
 
     printf("Loading data...\n");
-    vector<vector<double>> dataset = read_mnist_imgs("train-images.idx3-ubyte");
-    vector<vector<double>> labels = read_mnist_labels("train-labels.idx1-ubyte");
+    Matrix2d dataset = read_mnist_imgs("train-images.idx3-ubyte");
+    Matrix2d labels = read_mnist_labels("train-labels.idx1-ubyte");
 
     assert(dataset.size() % BATCH_SIZE == 0);
     const int NUM_BATCHES = dataset.size() / BATCH_SIZE;
@@ -36,11 +36,11 @@ int main()
     SoftmaxwithLoss softmax;
     SGD optimizer(0.01, 0.05, 0.9);
 
-    vector<double> acc(BATCH_SIZE);
-    vector<double> loss(BATCH_SIZE);
+    Matrix1d acc(BATCH_SIZE);
+    Matrix1d loss(BATCH_SIZE);
 
-    vector<vector<double>> IMG_BATCH(BATCH_SIZE, vector<double>(dataset[0].size()));
-    vector<vector<double>> LABEL_BATCH(BATCH_SIZE, vector<double>(labels[0].size()));
+    Matrix2d IMG_BATCH(BATCH_SIZE, Matrix1d(dataset[0].size()));
+    Matrix2d LABEL_BATCH(BATCH_SIZE, Matrix1d(labels[0].size()));
 
     for (int epoch = 0; epoch < NUM_EPOCHS; ++epoch)
     {

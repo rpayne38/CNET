@@ -1,23 +1,22 @@
 #include "np.h"
-using namespace std;
 
 class Dense
 {
 public:
-    vector<vector<double>> weights;
-    vector<double> biases;
-    vector<vector<double>> output;
-    vector<vector<double>> _inputs;
-    vector<vector<double>> dinputs;
-    vector<vector<double>> dweights;
-    vector<double> dbiases;
-    vector<vector<double>> weight_momentums;
-    vector<double> bias_momentums;
+    Matrix2d weights;
+    Matrix1d biases;
+    Matrix2d output;
+    Matrix2d _inputs;
+    Matrix2d dinputs;
+    Matrix2d dweights;
+    Matrix1d dbiases;
+    Matrix2d weight_momentums;
+    Matrix1d bias_momentums;
 
     //constructor
     Dense(unsigned int n_inputs, unsigned int n_neurons)
     {
-        weights = vector<vector<double>>(n_inputs, vector<double>(n_neurons));
+        weights = Matrix2d(n_inputs, Matrix1d(n_neurons));
         for (unsigned int row = 0; row < n_inputs; row++)
         {
             for (unsigned int col = 0; col < n_neurons; col++)
@@ -25,12 +24,12 @@ public:
                 weights[row][col] = 0.01 * getRandomDouble(-1, 1);
             }
         }
-        biases = vector<double>(n_neurons, 0);
-        weight_momentums = vector<vector<double>>(n_inputs, vector<double>(n_neurons, 0));
-        bias_momentums = vector<double>(n_neurons, 0);
+        biases = Matrix1d(n_neurons, 0);
+        weight_momentums = Matrix2d(n_inputs, Matrix1d(n_neurons, 0));
+        bias_momentums = Matrix1d(n_neurons, 0);
     }
 
-    void forward(vector<vector<double>> &inputs)
+    void forward(Matrix2d &inputs)
     {
         _inputs = inputs;
         output = matrixMultiply(inputs, weights);
@@ -40,13 +39,13 @@ public:
         }
     }
 
-    void backward(vector<vector<double>> &dvalues)
+    void backward(Matrix2d &dvalues)
     {
-        vector<vector<double>> inputs_T(_inputs[0].size(), vector<double>(_inputs.size()));
-        dweights = vector<vector<double>>(weights.size(), vector<double>(weights[0].size()));
-        dbiases = vector<double>(biases.size());
-        vector<vector<double>> weights_T(weights[0].size(), vector<double>(weights.size()));
-        dinputs = vector<vector<double>>(dvalues.size(), vector<double>(weights_T[0].size()));
+        Matrix2d inputs_T(_inputs[0].size(), Matrix1d(_inputs.size()));
+        dweights = Matrix2d(weights.size(), Matrix1d(weights[0].size()));
+        dbiases = Matrix1d(biases.size());
+        Matrix2d weights_T(weights[0].size(), Matrix1d(weights.size()));
+        dinputs = Matrix2d(dvalues.size(), Matrix1d(weights_T[0].size()));
         inputs_T = transpose(_inputs);
         dweights = matrixMultiply(inputs_T, dvalues);
         dbiases = sumMatrix(dvalues, 0);
@@ -58,14 +57,14 @@ public:
 class Relu
 {
 public:
-    vector<vector<double>> output;
-    vector<vector<double>> dinputs;
-    vector<vector<double>> inputs;
+    Matrix2d output;
+    Matrix2d dinputs;
+    Matrix2d inputs;
 
-    void forward(vector<vector<double>> &input)
+    void forward(Matrix2d &input)
     {
         inputs = input;
-        output = vector<vector<double>>(input.size(), vector<double>(input[0].size()));
+        output = Matrix2d(input.size(), Matrix1d(input[0].size()));
         for (unsigned int row = 0; row < input.size(); row++)
         {
             for (unsigned int col = 0; col < input[0].size(); col++)
@@ -78,9 +77,9 @@ public:
         }
     }
 
-    void backward(vector<vector<double>> &dvalues)
+    void backward(Matrix2d &dvalues)
     {
-        dinputs = vector<vector<double>>(dvalues.size(), vector<double>(dvalues[0].size(), 0));
+        dinputs = Matrix2d(dvalues.size(), Matrix1d(dvalues[0].size(), 0));
         for (unsigned int row = 0; row < dvalues.size(); row++)
         {
             for (unsigned int col = 0; col < dvalues[0].size(); col++)
@@ -97,12 +96,12 @@ public:
 class Softmax
 {
 public:
-    vector<vector<double>> output;
+    Matrix2d output;
 
-    void forward(vector<vector<double>> &input)
+    void forward(Matrix2d &input)
     {
         //find max of each row
-        vector<double> max(input.size(), 0);
+        Matrix1d max(input.size(), 0);
         for (unsigned int row = 0; row < input.size(); row++)
         {
             for (unsigned int col = 0; col < input[0].size(); col++)
@@ -114,7 +113,7 @@ public:
             }
         }
 
-        vector<vector<double>> exp_values(input.size(), vector<double>(input[0].size()));
+        Matrix2d exp_values(input.size(), Matrix1d(input[0].size()));
         for (unsigned int row = 0; row < input.size(); row++)
         {
             for (unsigned int col = 0; col < input[0].size(); col++)
@@ -123,10 +122,10 @@ public:
             }
         }
 
-        vector<double> sum(input.size(), 0);
+        Matrix1d sum(input.size(), 0);
         sum = sumMatrix(exp_values, 1);
 
-        output = vector<vector<double>>(input.size(), vector<double>(input[0].size()));
+        output = Matrix2d(input.size(), Matrix1d(input[0].size()));
         for (unsigned int row = 0; row < input.size(); row++)
         {
             for (unsigned int col = 0; col < input[0].size(); col++)
@@ -140,10 +139,10 @@ public:
 class Loss
 {
 public:
-    virtual vector<double> forward(vector<vector<double>> output, vector<vector<double>> y) = 0;
-    float calculate(vector<vector<double>> &output, vector<vector<double>> &y)
+    virtual Matrix1d forward(Matrix2d output, Matrix2d y) = 0;
+    float calculate(Matrix2d &output, Matrix2d &y)
     {
-        vector<double> sample_losses = forward(output, y);
+        Matrix1d sample_losses = forward(output, y);
         float sum = 0;
         for (unsigned int i = 0; i < sample_losses.size(); i++)
         {
@@ -156,7 +155,7 @@ public:
 class CategoricalCrossEntropy : public Loss
 {
 public:
-    vector<double> forward(vector<vector<double>> y_pred, vector<vector<double>> y_true)
+    Matrix1d forward(Matrix2d y_pred, Matrix2d y_true)
     {
         //clip y_pred to prevent it going to infinity
         for (unsigned int row = 0; row < y_pred.size(); row++)
@@ -184,7 +183,7 @@ public:
         }
 
         //sum confidences of each sample
-        vector<double> sum(y_pred.size(), 0);
+        Matrix1d sum(y_pred.size(), 0);
         sum = sumMatrix(y_pred, 1);
 
         //compute negative log loss of each sample
@@ -199,11 +198,11 @@ public:
 class SoftmaxwithLoss
 {
 public:
-    vector<vector<double>> output;
-    vector<vector<double>> dinputs;
+    Matrix2d output;
+    Matrix2d dinputs;
     float loss;
 
-    void forward(vector<vector<double>> &inputs, vector<vector<double>> &y_true)
+    void forward(Matrix2d &inputs, Matrix2d &y_true)
     {
         Softmax activation;
         CategoricalCrossEntropy loss_func;
@@ -212,10 +211,10 @@ public:
         loss = loss_func.calculate(output, y_true);
     }
 
-    void backward(vector<vector<double>> &dvalues, vector<vector<double>> &y_true)
+    void backward(Matrix2d &dvalues, Matrix2d &y_true)
     {
         //if one hot change to discrete value
-        vector<double> discrete;
+        Matrix1d discrete;
         if (y_true[0].size() > 1)
         {
             discrete = argmax(y_true);
@@ -262,7 +261,7 @@ public:
 
     void update_params(Dense &A)
     {
-        vector<vector<double>> weight_updates(A.weights.size(), vector<double>(A.weights[0].size()));
+        Matrix2d weight_updates(A.weights.size(), Matrix1d(A.weights[0].size()));
         for (unsigned int row = 0; row < A.weights.size(); row++)
         {
             for (unsigned int col = 0; col < A.weights[0].size(); col++)
@@ -273,7 +272,7 @@ public:
             }
         }
 
-        vector<double> bias_updates(A.biases.size());
+        Matrix1d bias_updates(A.biases.size());
         for (unsigned int col = 0; col < A.dbiases.size(); col++)
         {
             bias_updates[col] = _momentum * A.bias_momentums[col] + current_lr * A.dbiases[col];
@@ -289,10 +288,10 @@ public:
     }
 };
 
-double accuracy(vector<vector<double>> &y_pred, vector<vector<double>> &y_true)
+double accuracy(Matrix2d &y_pred, Matrix2d &y_true)
 {
-    vector<double> preds = argmax(y_pred);
-    vector<double> gnd_true = argmax(y_true);
+    Matrix1d preds = argmax(y_pred);
+    Matrix1d gnd_true = argmax(y_true);
     float sum = 0;
 
     for (unsigned int sample = 0; sample < preds.size(); sample++)
