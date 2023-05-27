@@ -10,3 +10,6 @@
 /.vscode
 *.out
 *.out.*
+CNET.*
+.vs/*
+x64/*
