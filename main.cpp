@@ -1,4 +1,5 @@
 #include "CNet.h"
+#include <assert.h>
 
 #ifdef _WIN32
 #include <chrono>
@@ -6,13 +7,11 @@
 #include <sys/time.h>
 #endif
 
-using namespace std;
-
-int NUM_EPOCHS = 5;
-int BATCH_SIZE = 1000;
-
 int main()
 {
+    int NUM_EPOCHS = 5;
+    int BATCH_SIZE = 1000;
+
     //Start timer
 #ifdef _WIN32
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
@@ -21,12 +20,14 @@ int main()
     gettimeofday(&start, NULL);
 #endif
 
-    cout << "Loading data...\n";
+    printf("Loading data...\n");
     vector<vector<double>> dataset = read_mnist_imgs("train-images.idx3-ubyte");
     vector<vector<double>> labels = read_mnist_labels("train-labels.idx1-ubyte");
+
+    assert(dataset.size() % BATCH_SIZE == 0);
     const int NUM_BATCHES = dataset.size() / BATCH_SIZE;
 
-    cout << "Loading model...\n";
+    printf("Loading model...\n");
     Dense Dense1(28 * 28, 32);
     Relu Activation1;
     Dense Dense2(32, 32);
@@ -35,17 +36,19 @@ int main()
     SoftmaxwithLoss softmax;
     SGD optimizer(0.01, 0.05, 0.9);
 
-    for (int epoch = 0; epoch < NUM_EPOCHS; epoch++)
-    {
-        vector<double> acc(BATCH_SIZE);
-        vector<double> loss(BATCH_SIZE);
+    vector<double> acc(BATCH_SIZE);
+    vector<double> loss(BATCH_SIZE);
 
-        cout << "Epoch: " << epoch + 1 << "\n";
-        for (int step = 0; step < dataset.size() / BATCH_SIZE; step++)
+    vector<vector<double>> IMG_BATCH(BATCH_SIZE, vector<double>(dataset[0].size()));
+    vector<vector<double>> LABEL_BATCH(BATCH_SIZE, vector<double>(labels[0].size()));
+
+    for (int epoch = 0; epoch < NUM_EPOCHS; ++epoch)
+    {
+        printf("Epoch: %i\n", epoch);
+
+        for (int step = 0; step < NUM_BATCHES; ++step)
         {
             //Extract batch from dataset
-            vector<vector<double>> IMG_BATCH(BATCH_SIZE, vector<double>(dataset[0].size()));
-            vector<vector<double>> LABEL_BATCH(BATCH_SIZE, vector<double>(labels[0].size()));
             batch_data(dataset, IMG_BATCH, step);
             batch_data(labels, LABEL_BATCH, step);
 
@@ -78,10 +81,7 @@ int main()
         optimizer.decay_lr();
 
         //Print average loss and accuracy values
-        cout << endl;
-        cout << "Loss: " << avg(loss.data(), NUM_BATCHES) << "\tAccuracy: " << avg(acc.data(), NUM_BATCHES) << "\t"
-            << "Lr: " << optimizer.current_lr;
-        cout << endl;
+        printf("\nLoss: %.3f\tAccuracy: %.3f\tLearning Rate: %.3f\n ", avg(loss.data(), NUM_BATCHES), avg(acc.data(), NUM_BATCHES), optimizer.current_lr);
     }
 
     //Calculate and print overall execution time and seconds per epoch
