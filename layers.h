@@ -1,4 +1,6 @@
-#include "np.h"
+#pragma once 
+
+#include "helperFuncs.h"
 
 class Dense
 {

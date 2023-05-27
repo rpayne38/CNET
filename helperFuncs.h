@@ -1,3 +1,5 @@
+#pragma once
+
 #include <iostream>
 #include <vector>
 #include <random>
@@ -10,7 +12,6 @@ typedef std::vector<double>                 Matrix1d;
 double getRandomDouble(double low, double high)
 {
     using namespace std;
-
     random_device rd;
     mt19937 gen(rd());
     uniform_real_distribution<> dis(low, high);

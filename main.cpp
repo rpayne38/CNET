@@ -1,4 +1,4 @@
-#include "CNet.h"
+#include "layers.h"
 #include <assert.h>
 
 #ifdef _WIN32
