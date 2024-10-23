@@ -87,7 +87,8 @@ int main()
     //Calculate and print overall execution time and seconds per epoch
 #ifdef _WIN32
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    float delta = std::chrono::duration_cast<std::chrono::seconds>(end - begin).count();
+    std::chrono::duration<float> duration = end - begin;
+    float delta = duration.count();
 #else
     gettimeofday(&end, NULL);
     float delta = ((end.tv_sec - start.tv_sec) * 1000000u + end.tv_usec - start.tv_usec) / 1.e6;
