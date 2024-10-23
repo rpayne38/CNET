@@ -13,3 +13,4 @@
 CNET.*
 .vs/*
 x64/*
+build/*
